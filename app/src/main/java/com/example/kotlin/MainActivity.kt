@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -36,20 +37,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kotlin.ui.core.Navigation.AppRoutes
+import com.example.kotlin.ui.ecommerce.MainViewModel
 import com.example.kotlin.ui.feature.commerce.ui.screens.main.MainTabScreen
 import com.example.kotlin.ui.feature.commerce.ui.tabs.product.ProductTab
 import com.example.kotlin.ui.feature.home.HomeScreen
-import com.example.kotlin.ui.feature.login.LoginScreen
+import com.example.kotlin.ui.feature.auth.ui.login.LoginScreen
 import com.example.kotlin.ui.feature.network.api.NetworkModule
-import com.example.kotlin.ui.feature.register.RegisterScreen
+import com.example.kotlin.ui.feature.auth.ui.register.RegisterScreen
 import com.example.kotlin.ui.theme.KotlinTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+val mainViewModel : MainViewModel by  viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +62,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             KotlinTheme {
 //                AppRoutes()
-             AppRoutes()
+
+     val startDestination by mainViewModel.startDestnation.collectAsStateWithLifecycle()
+
+                startDestination?.let {
+                    des->
+                    AppRoutes(
+startDest = des,
+                        onSplashFinished ={ mainViewModel.onSplashFinish()}
+                    )
+                }
+
+
             }
         }
 

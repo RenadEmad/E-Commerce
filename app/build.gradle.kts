@@ -74,6 +74,8 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.logging.interceptor)
 
+    //
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     // Compose / AndroidX
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.material.icons.core)

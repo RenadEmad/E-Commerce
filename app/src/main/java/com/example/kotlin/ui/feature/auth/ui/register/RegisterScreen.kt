@@ -1,4 +1,4 @@
-package com.example.kotlin.ui.feature.register
+package com.example.kotlin.ui.feature.auth.ui.register
 
 import CustomElevatedButton
 import androidx.compose.foundation.background
@@ -28,26 +28,53 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kotlin.ui.component.CustomTextField
-import com.example.kotlin.ui.feature.login.TopLogoSection
+import com.example.kotlin.ui.feature.auth.ui.login.TopLogoSection
 import AppValidators
+import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kotlin.ui.feature.commerce.domain.utility.Resource
+import com.example.kotlin.ui.feature.commerce.ui.common.MainLoadingSection
 
 @Composable
 fun RegisterScreen(
     modifier: Modifier = Modifier,
-    onSignUpClick: (String) -> Unit,
-    onLoginClick: () -> Unit
+//    onSignUpClick: (String) -> Unit,
+    onSignUpClick: () -> Unit,
+    onLoginClick: () -> Unit,
+    viewModel: RegisterViewModel = hiltViewModel()
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
-    var fullName by remember { mutableStateOf("Renad") }
-    var mobileNumber by remember { mutableStateOf("0123467890") }
-    var email by remember { mutableStateOf("renad@gmail.com") }
-    var password by remember { mutableStateOf("Renad@123") }
+    val states by viewModel.states.collectAsStateWithLifecycle( )
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect{ effects->
+            when(effects){
+                RegisterEffects.OnNavigateToHome -> {
+                    onSignUpClick()
+                }
+                is RegisterEffects.ShowToast ->{
+                    Toast.makeText(context,effects.message,Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+    
+    
+//    var fullName by remember { mutableStateOf("Renad") }
+//    var mobileNumber by remember { mutableStateOf("0123467890") }
+//    var email by remember { mutableStateOf("renad@gmail.com") }
+//    var password by remember { mutableStateOf("Renad@123") }
 
     var fullNameError by remember { mutableStateOf<String?>(null) }
     var mobileError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+
 
     Column(
         modifier = modifier
@@ -78,11 +105,11 @@ fun RegisterScreen(
         CustomTextField(
             modifier = modifier.fillMaxWidth(),
 
-            value = fullName,
+            value = states.name,
             hintText = "Enter your full name",
             errorMessage = fullNameError,
-            onChange = {
-                fullName = it
+            onChange = { newVal->
+                viewModel.onIntent(RegisterIntent.NameChanged(name = newVal))
                 fullNameError = null
             }
         )
@@ -91,12 +118,13 @@ fun RegisterScreen(
         CustomTextField(
             modifier = modifier.fillMaxWidth(),
 
-            value = mobileNumber,
+            value = states.phone,
             hintText = "Enter your mobile number",
             keyboardType = KeyboardType.Phone,
             errorMessage = mobileError,
             onChange = {
-                mobileNumber = it
+                    newVal->
+                viewModel.onIntent(RegisterIntent.PhoneChanged(phone = newVal))
                 mobileError = null
             }
         )
@@ -105,12 +133,13 @@ fun RegisterScreen(
         CustomTextField(
             modifier = modifier.fillMaxWidth(),
 
-            value = email,
+            value = states.email,
             hintText = "Enter your E-mail",
             keyboardType = KeyboardType.Email,
             errorMessage = emailError,
             onChange = {
-                email = it
+                    newVal->
+                viewModel.onIntent(RegisterIntent.EmailChanged(email = newVal))
                 emailError = null
             }
         )
@@ -119,36 +148,67 @@ fun RegisterScreen(
         CustomTextField(
             modifier = modifier.fillMaxWidth(),
 
-            value = password,
+            value = states.password,
             hintText = "Enter password",
             keyboardType = KeyboardType.Password,
             isPassword = true,
             errorMessage = passwordError,
             onChange = {
-                password = it
+                    newVal->
+                viewModel.onIntent(RegisterIntent.PasswordChanged(password = newVal))
+
                 passwordError = null
             }
         )
+        var rePasswordError by remember { mutableStateOf<String?>(null) }
 
-        CustomElevatedButton(
-            modifier = modifier.fillMaxWidth(),
-
-            text = "Register",
-            onClick = {
-                fullNameError = AppValidators.validateName(fullName)
-                mobileError = AppValidators.validatePhone(mobileNumber)
-                emailError = AppValidators.validateEmail(email)
-                passwordError = AppValidators.validatePassword(password)
-
-                val isValid = listOf(fullNameError, mobileError, emailError, passwordError)
-                    .all { it == null }
-
-                if (isValid) {
-                    // TODO: call register API
-                    onSignUpClick(fullName)
-                }
+        FieldLabel("Confirm password")
+        CustomTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = states.rePassword,
+            hintText = "Confirm password",
+            keyboardType = KeyboardType.Password,
+            isPassword = true,
+            errorMessage = rePasswordError,
+            onChange = { newVal ->
+                viewModel.onIntent(RegisterIntent.RePasswordChanged(rePassword = newVal))
+                rePasswordError = null
             }
         )
+
+        if(states.registerStates is Resource.Loading)
+        {
+            MainLoadingSection()
+        }
+        else{
+            CustomElevatedButton(
+                modifier = modifier.fillMaxWidth(),
+
+                text = "Register",
+                onClick = {
+                    fullNameError = AppValidators.validateName(states.name)
+                    mobileError = AppValidators.validatePhone(states
+                        .phone)
+                    emailError = AppValidators.validateEmail(states.email)
+                    passwordError = AppValidators.validatePassword(states.password)
+                    rePasswordError = AppValidators.validateRePassword(states.password, states.rePassword)
+
+                    val isValid = listOf(fullNameError, mobileError, emailError, passwordError, rePasswordError)
+                        .all { it == null }
+
+
+                    if (isValid) {
+                        // TODO: call register API
+//                    onSignUpClick(states.name)
+                        viewModel.onIntent(
+                            RegisterIntent.OnSignUpClicked
+                        )
+                    }
+                }
+            )
+
+        }
+
 
         Row(
             modifier = Modifier.fillMaxWidth(),

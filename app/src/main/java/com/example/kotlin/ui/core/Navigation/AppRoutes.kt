@@ -17,3 +17,8 @@ object RegisterRoute{
 object MainTabRoute{
 
 }
+
+@Serializable
+object SplashRoute{
+
+}
